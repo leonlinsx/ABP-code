@@ -1,0 +1,167 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+
+/**
+ * The Hack CPU (Central Processing unit), consisting of an ALU,
+ * two registers named A and D, and a program counter named PC.
+ * The CPU is designed to fetch and execute instructions written in 
+ * the Hack machine language. In particular, functions as follows:
+ *
+ * Executes the inputted instruction according to the Hack machine 
+ * language specification. The D and A in the language specification
+ * refer to CPU-resident registers, while M refers to the external
+ * memory location addressed by A, i.e. to Memory[A]. The inM input 
+ * holds the value of this location. If the current instruction needs 
+ * to write a value to M, the value is placed in outM, the address 
+ * of the target location is placed in the addressM output, and the 
+ * writeM control bit is asserted. (When writeM==0, any value may 
+ * appear in outM). 
+ * 
+ * The outM and writeM outputs are combinational: 
+ * they are affected instantaneously by the execution of the current 
+ * instruction. The addressM and pc outputs are clocked: although they 
+ * are affected by the execution of the current instruction, they commit 
+ * to their new values only in the next time step. 
+ * 
+ * If reset==1 then the 
+ * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * than to the address resulting from executing the current instruction.
+ * 
+ * "ixxaccccccdddjjj" is the 
+ * The i-bit (also known as opcode) codes the instruction type, 
+ * which is either 0 for an A-instruction or 1 for a C-instruction.
+ *  
+ * In case of an A-instruction, the entire instruction represent 
+ * the 16-bit value of the constant that should be loaded
+ * into the A register.  
+ * 
+ * In case of a C-instruction, the a- and c-bits code the comp part of the instruction,
+ * while the d- and j-bits code the dest and jump parts of the instruction, respectively
+ * (the x-bits are not used, and can be ignored).
+ * 
+ * Note that * asterisks in the compare file mean can ignore, does not represent errors 
+ */
+
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    // Put your code here:
+
+    //  i  _  _  a c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
+    // 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+
+    // Need to find if instruction is A-instruction or C-instruction
+    // That's in the i-bit which is instruction[15]
+    // if i-bit is 0, set ouput 1 to represent yes for A-instruction
+    Not(in=instruction[15], out=yesA);
+    
+    // First Mux16 
+    // https://b1391bd6-da3d-477d-8c01-38cdf774495a.filesusr.com/ugd/44046b_552ed0898d5d491aabafd8a768a87c6f.pdf 
+    // Takes ALU output, instruction, control bit (sel),
+    // Sends output to A register
+    // If is A-instruction (yes_A), pass the data value (instruction) onwards into A-register
+    // If is C-instruction (yes_A is 0), pass the ALU output into onwards into A-register
+    Mux16(a=ALUout, b=instruction, sel=yesA, out=FirstMuxOut);
+
+    // A-register
+    // C-instruction can also affect A-register 
+    // https://docs.wixstatic.com/ugd/56440f_65a2d8eef0ed4e0ea2471030206269b5.pdf
+    // d1 (instruction[5]) is 1 if so
+    // If either d1 or yes_A, we want to load A-register with the output of First Mux
+    Or(a=yesA, b=instruction[5], out=loadA);
+    // A-register takes the output of FirstMux, gets loaded or not
+    // and outputs to SecondMux, addressM, PC
+    // addressM is 15 bit
+    ARegister(in=FirstMuxOut, load=loadA, out=Aregout, out[0..14]=addressM);
+    
+    // Second Mux16
+    // Takes A-register output, inM, control, and passes output to ALU
+    // a (instruction[12]) determines if we're using inM or not, 
+    // but only if it's a C-instruction (instruction[15] == 1)
+    // If it's A-instruction, use the Aregout
+    And(a=instruction[15], b=instruction[12], out=yesM);
+    Mux16(a=Aregout, b=inM, sel=yesM, out=SecMuxOut);
+
+    // D-register
+    // Takes ALU output, control, passes output to ALU
+    // d2 (instruction[4]) is 1 if storing value in D-register
+    // but only if it's a C-instruction
+    And(a=instruction[15], b=instruction[4], out=yesD);
+    DRegister(in=ALUout, load=yesD, out=Dregout);
+
+    // ALU
+    // Takes inputs from D-register and SecondMux16, 
+    // all the other ALU control bit inputs
+    // outputs ALUout, outM, and zr (zero), ng (negative)
+    // the first value x is Dregout; second value y is SecMuxOut
+    // I think the order doesn't matter though as long as you match the zx zy etc
+    // e.g. if c1 (instruction[11]) is 1, zx is 1, set Dregout to 0
+    // in other words, match the C-instruction order with ALU order
+    // 
+    ALU(x=Dregout, y=SecMuxOut, 
+       zx=instruction[11],
+       nx=instruction[10],
+       zy=instruction[9],
+       ny=instruction[8], 
+       f=instruction[7],
+       no=instruction[6],
+
+       out=ALUout,
+       out=outM,
+
+       zr=yeszr,
+       ng=yesng);
+
+    // writeM
+    // value is stored in M memory (RAM[address]) if d3 is 1
+    // but only if it's a C-instruction
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // Program Counter
+    // takes in reset, Aregout, control (to jump or not)
+    // outputs the next address pc
+    // Now, the question of whether or not a jump should be realized is answered by two signals: 
+    // (i) the j-bits of the current instruction, specifying the jump condition
+    // (ii) the ALU output-bits zr and ng, which can be used to determine if the specified condition is satisfied, or not.
+    
+    // first also get if output is positive or nonzero as well for use later
+    Not(in=yeszr, out=notzr);
+    Not(in=yesng, out=yespos);
+    // next see if it's positive and nonzero
+    And(a=notzr, b=yespos, out=notzryespos);
+    // if out >0 jump for JGT, but only for c-instruction and j3 (instruction[0]) == 1
+    And(a=instruction[15], b=instruction[0], out=JGT);
+    And(a=JGT, b=notzryespos, out=jump1);
+
+    // if out == 0 jump for JEQ, but only for c-instruction and j2 == 1
+    And(a=instruction[15], b=instruction[1], out=JEQ);
+    And(a=JEQ, b=yeszr, out=jump2);
+
+    // if out <0 jump for JLT, but only for c-instruction and j1 == 1
+    And(a=instruction[15], b=instruction[2], out=JLT);
+    And(a=JLT, b=yesng, out=jump3);
+
+    // If any of these are 1, jump
+    Or(a=jump1, b=jump2, out=jump4);
+    Or(a=jump3, b=jump4, out=yesjump);
+
+    // Only increase if not loading (yesjump 0)
+    Not(in=yesjump, out=yesinc);
+ 
+    PC(in=Aregout, load=yesjump, inc=yesinc, reset=reset, out[0..14]=pc);     
+    
+
+}

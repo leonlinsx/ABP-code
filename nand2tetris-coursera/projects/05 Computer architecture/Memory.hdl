@@ -1,0 +1,77 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ *
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ * 
+ * There is 16K of RAM memory using addresses 0 - 16383.
+ * There is 8K of Screen memory using addresses 16384 - 24575.
+ *
+ * Composed from three chips: RAM16K, Screen, Keyboard
+ * 
+ * "ixxaccccccdddjjj" is the 
+ * The i-bit (also known as opcode) codes the instruction type, 
+ * which is either 0 for an A-instruction or 1 for a C-instruction. 
+ * In case of an A-instruction, the entire instruction represent 
+ * the 16-bit value of the constant that should be loaded
+ * into the A register. 
+ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+    // We have a load input, and want to see where to send that load 
+    // We have 3 options - RAM16K, Screen, Keyboard
+    // Address is telling us where to send the load
+    // The first 13 bits of address all go to RAM (2^14 = 16384)
+    // Implying that if address[13..14] == 10 or more, it's going to Screen
+    // We don't care if address[13..14] == 11 (2^14+2^13 = 24576) since Screen ends just before
+    // We can use DMux4Way to split, but that gives us 4 outputs
+    // So 2 going to RAM (we'll combine later), and 1 going to Screen, and 1 don't care
+    DMux4Way(in=load, sel=address[13..14], a=rama, b=ramb, c=screen, d=dontcare);
+
+    // Now we combine the ram halves so only one final load value
+    // If either were selected, it's going to RAM16K (think OR)
+    Or(a=rama, b=ramb, out=ram);
+
+    // If we're sending to RAM16K, ram from above statement is 1
+    // Pass all the input data (in) to RAM16K
+    // RAM16K takes 14 bits, not the full 16 bit address
+    RAM16K(in=in, load=ram, address=address[0..13], out=ramout);
+
+    // If we're sending to Screen, screen from DMux is 1
+    // Screen takes 13 bits, not the full 16 bit address
+    Screen(in=in, load=screen, address=address[0..12], out=screenout);
+
+    // If we're sending to Keyboard
+    // Oh wait keyboard *doesn't take input*
+    Keyboard(out=keyout);
+
+    // Memory only does one thing at a time (why we had to go through all this trouble)
+    // So there's only one output
+    // We have 3 possible outputs, need to choose final output (think Mux4Way)
+    // We'll use address[13..14] again to choose if output is a, b, c, or d
+    // Double up the RAM16K output per how we allocated when we DMux
+    Mux4Way16(a=ramout, b=ramout, c=screenout, d=keyout, sel=address[13..14], out=out);
+}
