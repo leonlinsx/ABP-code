@@ -1,0 +1,178 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/**
+ * A library of commonly used mathematical functions.
+ * Note: Jack compilers implement multiplication and division using OS method calls.
+ */
+class Math {
+	static Array twoToThe;
+
+    /*
+     * Initializes the library. 
+     * This is helpful for all the bitwise bit shifting ops later
+     */
+    function void init() {
+	let twoToThe = Array.new(16); 
+	let twoToThe[0] = 1;
+	let twoToThe[1] = 2;
+	let twoToThe[2] = 4;
+	let twoToThe[3] = 8;
+	let twoToThe[4] = 16;
+	let twoToThe[5] = 32;
+	let twoToThe[6] = 64;
+	let twoToThe[7] = 128;
+	let twoToThe[8] = 256;
+	let twoToThe[9] = 512;
+	let twoToThe[10] = 1024;
+	let twoToThe[11] = 2048;
+	let twoToThe[12] = 4096;
+	let twoToThe[13] = 8192;
+	let twoToThe[14] = 16834;
+	let twoToThe[15] = 16834 + 16834; // avoid integer too big errors in compile
+	return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+	if (x < 0) {
+		let x = -x;
+	}
+	return x;
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     * 
+     *  For every bit of total register len, moving one bit at a time, 
+     *  I add (or don't add) x to the sum, depending if the ith bit of y is 1
+     */
+    function int multiply(int x, int y) {
+	var int sum, shiftedX;
+	var int i;  // for the loop
+
+	let sum = 0;
+	let shiftedX = x;
+	let i = 0;
+
+	while (i < 16) {  // for i = 0 to w - 1, where w is num bits to represent N
+		if (Math.bit(y, i)) {
+			let sum = sum + shiftedX;
+		}
+		let shiftedX = shiftedX + shiftedX;  // for obvious reasons we can't use multiply here since we're defining it
+		let i = i + 1;
+	}
+	return sum;
+    }
+
+    /** Returns the integer part of x/y.
+     *  When a Jack compiler detects the multiplication operator '/' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x/y and divide(x,y) return the same value.
+     *  
+     *  will do a recursive algo
+     *  Suppose we want to divide 100 by 7. 
+     *  Well, I don't know what's the answer, but I do know that the answer is twice as much as 50 divided by 7. 
+     *  Now what is 50 divided by 7? 
+     *  I don't know, but it must be twice as much as 25 divided by 7.
+     *  
+     */
+    function int divide(int x, int y) {
+	var boolean pos;
+	var int q;
+	var int result;
+
+	let pos = ((x < 0) = (y < 0));  // if both same sign
+
+	if (y > x) {  // can't divide by larger num
+		return 0;
+	}
+	
+	// http://nand2tetris-questions-and-answers-forum.32033.n3.nabble.com/Built-in-function-trried-to-access-memory-outside-heap-or-screen-td4031145.html
+	if (y < 16384) {
+		let q = Math.divide(x, y + y);  // call it recursively, will end when we find the largest "multiple" of y
+	}
+	else {
+		let q = 0;
+	}
+
+	if ((x - (2 * q * y)) < y) { // https://stackoverflow.com/questions/41857968/recursive-division-algorithm-for-two-n-bit-numbers
+		let result = q + q;
+	}
+	else {
+		let result = q + q + 1;
+	}
+
+	if (pos) {  // check sign
+		return result;
+	}
+	else {
+		return -result;
+	}
+    }
+
+    /*
+     * Returns remainder of x / y
+     */
+    function int mod(int x, int y) {
+   	var int q;
+
+	let q = Math.divide(x, y);
+	return x - Math.multiply(q, y);
+
+    }
+
+    /*
+     * Returns the integer part of the square root of x. 
+     * if (y + 2 ^ j) ^ 2 < x then y = y + 2 ^ j
+     */
+    function int sqrt(int x) {
+	var int j, y;
+	var int temp;
+	var int temp_squared;
+
+	let y = 0;
+	let j = 7;  // 16 bits / 2 - 1 for binary search
+
+	while (~(j < 0)) {
+		let temp = y + twoToThe[j];
+		let temp_squared = temp * temp;
+
+		if (~(temp_squared > x) & (temp_squared > 0)){
+		let y = temp; // only increase y if it doesn't overflow
+		}
+		let j = j - 1;
+	}
+	return y;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) {
+	if (a > b) {
+		return a;
+	}
+	else {
+		return b;
+	}
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) {
+	if (a < b) {
+		return a;
+	}
+	else {
+		return b;
+	}
+    }
+
+    /** helper function true if ith bit of x is 1, false otherwise */
+    function boolean bit(int x, int i) {
+    	return ~((x & twoToThe[i]) = 0);
+    }
+
+}

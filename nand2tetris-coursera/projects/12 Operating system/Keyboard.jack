@@ -1,0 +1,105 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Keyboard.jack
+// www.csie.ntu.edu.tw/~cyy/courses/introCS/18fall/lectures/handouts/lec13_Jack.pdf
+// github.com/havivha/Nand2Tetris/blob/master/12/Keyboard.jack
+
+/**
+ * A library for handling user input from the keyboard.
+ */
+class Keyboard {
+	// static Array keyboard;  // use an array, could also have return Memory.peek(24576) for keyPressed()
+
+    /** 
+     * Initializes the keyboard. 
+     * By convention the keyboard word starts at 24576 in RAM
+     */
+    function void init() {
+	return;
+    } 
+
+    /**
+     * Returns the character of the currently pressed key on the keyboard;
+     * if no key is currently pressed, returns 0.
+     *
+     * Recognizes all ASCII characters, as well as the following keys:
+     * new line = 128 = String.newline()
+     * backspace = 129 = String.backspace()
+     * left arrow = 130
+     * up arrow = 131
+     * right arrow = 132
+     * down arrow = 133
+     * home = 134
+     * End = 135
+     * page up = 136
+     * page down = 137
+     * insert = 138
+     * delete = 139
+     * ESC = 140
+     * F1 - F12 = 141 - 152
+     * 
+     * https://in-addr.nl/mirror/nand2tetris.org/lectures/PDF/lecture%2012%20OS.pdf pg 36
+     */
+    function char keyPressed() {
+	return Memory.peek(24576);
+    }
+
+    /**								
+     * Waits until a key is pressed on the keyboard and released,
+     * then echoes the key to the screen, and returns the character 
+     * of the pressed key.
+     *
+     * https://in-addr.nl/mirror/nand2tetris.org/lectures/PDF/lecture%2012%20OS.pdf pg 38
+     * Do nothing while no key pressed
+     */
+    function char readChar() {
+	var char key;
+	while(Keyboard.keyPressed() = 0) {}
+	let key = Keyboard.keyPressed();
+
+	while(~(Keyboard.keyPressed() = 0)) {}
+	do Output.printChar(key);
+
+	return key;
+
+    }
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its value. Also handles user backspaces.
+     */
+    function String readLine(String message) {
+	var String line;
+	var char c;  // will need to declare vars for line and char
+
+	do Output.printString(message);
+
+	let line = String.new(50);  // set some arbitrary max len
+	let c = Keyboard.readChar();  // check the next char
+	while (~(c = String.newLine())) {
+		if (c = String.backSpace()){  // handle backspaces
+			do line.eraseLastChar();
+		}
+		else {
+			do line.appendChar(c);
+		}
+		let c = Keyboard.readChar();  // check next char
+	}
+	return line;
+    }   
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its integer value (until the first non-digit character in the
+     * entered text is detected). Also handles user backspaces. 
+     */
+    function int readInt(String message) {
+	var String line;
+
+	let line = Keyboard.readLine(message);
+	return line.intValue();
+    }
+}

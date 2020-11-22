@@ -1,0 +1,105 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+// github.com/havivha/Nand2Tetris/blob/master/12/Memory.jack
+// http://nand2tetris-questions-and-answers-forum.32033.n3.nabble.com/New-Heap-Management-algorithm-Coursera-version-td4032026.html
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ *
+ * if we let Array ram = 0, then we can use ram[x] to access any x address in RAM
+ * this works because jack is weakly typed and allows Array = 0
+ */ 
+class Memory {
+	static Array ram;
+
+	static Array freeList;
+	static int heapBase;  // need starting address for heap
+	static int next, length;  // each segment has two words at top, for reference to next segment and segment size	
+	
+
+    /** Initializes the class. */
+    function void init() {
+	let ram = 0;  // weakly typed per above
+	let heapBase = 2048; // by convention heap starts at RAM[2048]
+	let next = 0;
+	let length = 1;  // the course has next in 0 and size in 1; unsure why others online do reverse
+
+	let freeList = heapBase;  // the freeList starts at where the heap starts, at first
+	let freeList[next] = null;
+	let freeList[length] = 16384 - 2048;  // by convention heap runs to RAM[16384]
+	return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+	return ram[address];  // Array ram = 0 lets us do this
+	
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+	let ram[address] = value;
+	return;
+    }
+
+    /** 
+     *  Finds an available RAM block of the given size and returns
+     *  a reference to its base address. 
+     *	
+     *	allocate a memory block of size words
+     *  search freeList using best-fit or first-fit heuristic
+     *  obtain a segment with segment.size >= size + 2
+     *  we have 2 overhead for next and size in the linked list
+     *  
+     *  if no segment found, return failure
+     *
+     *  block = base address of found space
+     *  update freeList and fields of block to account for allocation
+     *  return block
+     */
+    function int alloc(int size) {
+	var Array block, prevBlock, nextBlock;
+	
+	let block = freeList;  // start with where current freeList is at
+	let prevBlock = 0;
+
+	while (block[length] < size) {  // the length is net (reduced) by the 2 overhead words already
+		let prevBlock = block;
+		let block = block[next];  // set it to the next block, which is stored in the linked list
+
+		if (block = null) {
+			return -1;
+		}
+	}
+	// here we want to cut the found block into nextBlock
+	let nextBlock = block + 2 + size;  // new address is old + 2 words + size of new block
+	let nextBlock[next] = block[next];  // we replace "block" position in the linked list with nextBlock
+	let nextBlock[length] = block[length] - 2 - size;  // minus the 2 words 
+	// and this is the "cut out" part
+	let block[next] = null;  
+	let block[length] = size;
+
+	if (prevBlock = 0) {
+		let freeList = nextBlock;  // if the first block in the loop works, just use it
+	} else {
+		let prevBlock[next] = nextBlock;  // we point the prevBlock to nextBlock
+	}
+	
+	return block + 2;  // two word overhead for next and length
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+	var Array block;
+	
+	let block = o - 2;  // two word overhead for next and length
+	let block[next] = freeList;  // change where next points to in the linked list
+	let freeList = block;
+	return;
+    }    
+}
