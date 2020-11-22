@@ -1,0 +1,264 @@
+/**
+ * Snake class with main methods for gameplay to move, eat pellet, set score
+ */
+
+ class Snake {
+ 	field Array snakeparts;
+ 	field int maxlength, currlength;
+ 	field int length, pelletlength;
+ 	field int pelletx, pellety;
+ 	field int seedx, seedy;
+ 	field int random1, random2;
+ 	field int score;
+
+ 	constructor Snake new(int l) {
+ 		let maxlength = l;
+ 		let currlength = 5;
+ 		let length = 5; 
+ 		let pelletlength = 5;
+ 		let pelletx = 100; 
+ 		let pellety = 100;
+ 		// pseudo random functionality
+ 		let seedx = 15;
+ 		let seedy = 25;
+ 		let random1 = 20;
+ 		let random2 = 40;
+
+ 		let snakeparts = Array.new(maxlength);
+
+ 		do createFirst();
+ 		do drawSnake();
+ 		do setInitScore();
+ 		do drawPellet();
+
+ 		return this;
+ 	}
+
+ 	// create the first part of the snake
+ 	method void createFirst() {
+ 		var int startx, starty, startdirection;
+ 		var int n;
+ 		// default start pos and directions
+ 		let startx = 20;
+ 		let starty = 20;
+ 		let startdirection = 4; 
+ 		
+ 		let n = 0;
+ 		while (n < currlength) {
+ 			let snakeparts[n] = SnakePart.new(startx + n * 2 * length, starty, length, startdirection);
+ 			let n = n + 1;
+ 		}
+ 		return;
+ 	}
+
+ 	// calls the draw method from SnakePart for each snake part in the array
+ 	method void drawSnake() {
+ 		var SnakePart s;
+ 		var int n;
+
+ 		let n = 0;
+ 		while (n < currlength) {
+ 			let s = snakeparts[n];
+ 			do s.draw();
+ 			let n = n + 1;
+ 		}
+ 		return;
+ 	}
+
+ 	// initial score 0
+ 	method void setInitScore() {
+ 		let score = 0;
+ 		// moves the cursor to the j -th column of the i -th row, and erases the character displayed there.
+ 		do Output.moveCursor(1, 1);
+ 		// displays the given string starting at the cursor location, and advances the cursor appropriately.
+ 		do Output.printString("Score: ");
+ 		// ditto but for int
+ 		do Output.printInt(score);
+ 		
+ 		return;
+ 	}
+
+ 	// draw pellet randomly on screen
+ 	method void drawPellet() {
+ 		var int nX;
+ 		var int nY;
+
+ 		let nX = random1 * seedx + random2;
+ 		let pelletx = nX - ((nX / 480) * 480);
+ 		let seedx = pelletx;
+
+ 		let nY = random1 * seedy + random2;
+ 		let pellety = nY - ((nY / 240) * 240);
+ 		let seedy = pellety;
+
+ 		do Screen.setColor(true);
+ 		do Screen.drawRectangle(pelletx, pellety, pelletx + pelletlength, pellety + pelletlength);
+
+ 		return;
+ 	}
+
+ 	// main movement method
+ 	// returns boolean as SnakeGame checks that value to exit game
+ 	method boolean move(int direction) {
+ 		var SnakePart head;
+ 		var SnakePart f1, f2;
+		var int previousDirection;
+ 		var int headDirection;
+ 		var int headX, headY;
+ 		
+ 		var boolean gameEnd;
+ 		var booelan movable;
+ 		var boolean eaten;
+ 		
+ 		var int n;
+
+ 		let gameEnd = checkGameEnd();
+ 		if (gameEnd) {
+ 			return false;
+ 		}
+
+ 		// need to check if moving in possible direction
+ 		let head = snakeparts[currlength - 1];
+ 		let headDirection = head.getDirection();
+ 		let movable = movable(headDirection, direction);
+ 		if (~movable) {
+ 			return true;
+ 		}
+
+ 		// get the correct directions for all parts
+ 		let n = 0;
+ 		while (n < (currlength - 1)) {
+ 			let f1 = snakeparts[n];
+ 			let f2 = snakeparts[n + 1];
+ 			let previousDirection = f2.getDirection();
+ 			do f1.setDirection(previousDirection);
+ 			let n = n + 1;
+ 		}
+
+ 		if (~(direction = 0)) {
+ 			do head.setDirection(direction);
+ 		}
+
+ 		// move all parts
+ 		let n = 0;
+ 		while (n < currlength) {
+ 			let f1 = snakeparts[n];
+ 			do f1.move();
+ 			let n = n + 1;
+ 		}
+
+ 		let headX = head.getX();
+ 		let headY = head.getY();
+ 		// check if snake has "fully eaten" the pellet
+ 		if ((headX - length < pelletx) & (headX + length > pelletx) & (headY + length > pellety) & (headY - length < pellety)) {
+ 			let headDirection = head.getDirection();
+ 			do eat(headDirection, headX, headY);
+ 			do increaseScore();
+ 		}
+ 		do drawSnake();
+ 		do Sys.wait(75);
+
+ 		return true;
+ 	}
+
+ 	// check if snake can move in that direction specified
+ 	method booelan movable(int current, int new) {
+ 		if (new = 0) {
+ 			return true;
+ 		}
+ 		if (current = new) {
+ 			return false;
+ 		}
+ 		// up + down case or left + right case
+ 		if (((current + new) = 3) | ((current + new) = 7)) {
+ 			return false;
+ 		}
+ 		return true;
+ 	}
+
+ 	// snake eats a pellet
+ 	method boolean eat (int headDirection, int headX, int headY) {
+
+ 		do erasePellet();
+
+ 		// grow snake if under max length
+ 		if (currlength < maxlength) {
+ 			if (headDirection = 1) {
+ 				let snakeparts[currlength] = SnakePart.new(headX, headY - (length * 2), length, headDirection);
+ 			}
+ 			if (headDirection = 2) {
+ 				let snakeparts[currlength] = SnakePart.new(headX, headY + (length * 2), length, headDirection);
+ 			}
+ 			if (headDirection = 3) {
+ 				let snakeparts[currlength] = SnakePart.new(headX - (length * 2), headY, length, headDirection);
+ 			}
+ 			 if (headDirection = 4) {
+ 				let snakeparts[currlength] = SnakePart.new(headX + (length * 2), headY, length, headDirection);
+ 			}
+ 			let currlength = currlength + 1;
+ 		}
+ 		else {
+ 			return false;
+ 		}
+ 		do drawPellet();
+
+ 		return true;
+ 	}
+
+ 	// increase score whenever pellet eaten
+ 	method void increaseScore() {
+ 		let score = score + 5;
+ 		do Output.moveCursor(1, 1);
+ 		do Output.printString("Score: ");
+ 		do Output.printInt(score);
+
+ 		return;
+ 	}
+
+ 	// erase the current pellet as defined by pellet vars
+ 	method void erasePellet() {
+ 		do Screen.setColor(false);
+ 		do Screen.drawRectangle(pelletx, pellety, pelletx + pelletlength, pellety + pelletlength);
+ 		
+ 		return;
+ 	}
+
+ 	// check game end, returns boolean
+ 	method boolean checkGameEnd() {
+ 		var SnakePart head;
+ 		var int headX;
+ 		var int headY;
+ 		let head = snakeparts[currlength - 1];
+ 		let headX = head.getX();
+ 		let headY = head.getY();
+
+ 		if ((headX < 15) | (headX > 496) | (headY < 15) | (headY > 245)) {
+ 			// erases the entire screen.
+ 			do Screen.clearScreen();
+ 			do Output.moveCursor(20, 20);
+ 			do Output.printString("Game Over. Thanks for playing!");
+
+ 			return true;
+ 		}
+ 		return false;
+ 	}
+
+ 	method void dispose() {
+ 		var SnakePart s;
+ 		var int n;
+ 		
+ 		// run through entire array of parts and dispose each
+ 		let n = 0;
+ 		while (n < currlength) {
+ 			let s = snakeparts[n];
+ 			do s.dispose();
+ 			let n = n + 1;
+ 		}
+
+ 		do Memory.deAlloc(snakeparts);
+ 		do Memory.deAlloc(this);
+ 		
+ 		return;
+ 	}
+
+ }

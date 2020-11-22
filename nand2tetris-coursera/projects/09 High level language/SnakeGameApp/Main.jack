@@ -1,0 +1,28 @@
+// References:
+// Jack API https://b1391bd6-da3d-477d-8c01-38cdf774495a.filesusr.com/ugd/44046b_a89c06efcef3491cafb42fb76cc95dc0.pdf
+// https://github.com/jahnagoldman/nand2tetris/blob/master/Project9/Main.jack
+// https://github.com/SeaRbSg/nand2tetris/blob/master/jf647/09/Snake/Main.jack
+// https://github.com/mmmries/nand2tetris/blob/master/projects/09/Snake/Main.jack
+//
+// Run this with the provided compiler via command prompt
+// using these instructions http://nand2tetris-questions-and-answers-forum.32033.n3.nabble.com/Problem-with-JackCompiler-td4028846.html 
+// http://nand2tetris-questions-and-answers-forum.32033.n3.nabble.com/Jack-Compiler-td69796.html
+
+/**
+ * The Main class initialises a new Snake game
+ */
+
+class Main {
+	
+	// Initialise game
+	function void main() {
+		var SnakeGame game;
+
+		let game = SnakeGame.new();
+		do game.run();
+		do game.dispose();
+
+		return;
+	}
+
+}

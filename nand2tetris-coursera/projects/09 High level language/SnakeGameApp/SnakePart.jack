@@ -1,0 +1,137 @@
+/**
+ * SnakePart class constructs and draws new parts of the snake
+ * draws movement of the snake based on direction passed in
+ * also has methods to get position, length, direction
+ */
+
+ class SnakePart {
+
+ 	// x and y pos
+ 	field int x; 
+ 	field int y;
+ 	// up, down, left right -> 1, 2, 3, 4
+ 	field int direction;
+ 	// size of snake part
+ 	field int length;
+	field int buffer_length; 
+
+ 	constructor SnakePart new(int nX, int nY, int nLength, int nDirection) {
+ 		let x = nX;
+ 		let y = nY;
+ 		let length = nLength;
+ 		let direction = nDirection;
+
+ 		// define the dist between snake parts
+ 		let buffer_length = 10;
+
+ 		// method defined just below
+ 		do draw();
+
+ 		return this;
+ 	}
+
+ 	method void draw() {
+ 		// sets the current color, to be used for all subsequent drawXXX commands. 
+ 		// Black is represented by true, white by false .
+ 		do Screen.setColor(true);
+ 		// draws a filled rectangle
+ 		// top left corner is (x1, y1) and bottom right corner is (x2, y2), using the current color
+ 		do Screen.drawRectangle(x, y, x + length, y + length);
+
+ 		return;
+ 	}
+
+ 	
+ 	/* The Hack physical screen consists of 512 rows (indexed 0..511, top to bottom) of 256 pixels each (indexed 0..255, left to right). The top left pixel on the screen is indexed (0,0). */
+
+ 	// returns boolean on whether move was possible
+ 	method boolean move() {
+ 		// up
+ 		if (direction = 1) {
+ 			// need to check if have space to move; 10 is arbitrary grid boundary
+ 			if ((y - length) > 10) {
+ 				// "erase" the original
+ 				do Screen.setColor(false);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+
+ 				// draw the new
+ 				let y = y - buffer_length;
+ 				do Screen.setColor(true);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+ 			}
+ 			return true;
+ 		}
+
+ 		// down
+ 		if (direction = 2) {
+ 			// 250 is grid boundary
+ 			if ((y + length) < 250) {
+ 				do Screen.setColor(false);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+
+ 				let y = y + buffer_length;
+ 				do Screen.setColor(true);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+ 			}
+ 			return true;
+ 		}
+
+ 		// left 
+ 		if (direction = 3) {
+ 			// 10 is grid boundary
+ 			if ((x - length) > 10) {
+ 				do Screen.setColor(false);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+
+ 				let x = x - buffer_length;
+ 				do Screen.setColor(true);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+ 			}
+ 			return true;
+ 		}
+
+ 		// right
+ 		if (direction = 4) {
+ 			// 501 is grid boundary
+ 			if ((x + length) < 501) {
+ 				do Screen.setColor(false);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+
+ 				let x = x + buffer_length;
+ 				do Screen.setColor(true);
+ 				do Screen.drawRectangle(x, y, x + length, y + length);
+ 			}
+ 			return true;
+ 		}
+ 		// false if the move is not possible
+ 		return false;
+ 	}
+
+ 	method int getX() {
+ 		return x;
+ 	}
+
+ 	method int getY() {
+ 		return y;
+ 	}
+
+ 	method int getDirection() {
+ 		return direction;
+ 	}
+
+ 	method int getLength() {
+ 		return length;
+ 	}
+
+ 	method void setDirection(int dir) {
+ 		let direction = dir;
+
+ 		return;
+ 	}
+
+ 	method void dispose() {
+ 		do Memory.deAlloc(this);
+ 		return;
+ 	}
+
+ }

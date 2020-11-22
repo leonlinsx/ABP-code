@@ -1,0 +1,88 @@
+/**
+ * SnakeGame class constructs a new Snake class and accepts keyboard input
+ */
+
+class SnakeGame{
+
+	field Snake snake;
+	
+	// Initialise SnakeGame 
+	constructor SnakeGame new() {
+		// uses the snake class which constructs a snake of max length n
+		let snake = Snake.new(20);
+		return this;		
+	}
+
+	method void run() {
+		// need variables for keypress, up/down/left/right direction, whether moved, exit
+		var char key;
+		var int direction;
+		var boolean moved, exit;
+		let exit = false;
+		
+		// have to constantly check for keypress
+		while ((~exit) & (key = 0)) {
+			
+			/* returns the character of the currently pressed key on the keyboard;
+			if no key is currently pressed, returns 0. Recognizes all ASCII characters, as well as the
+			following keys: newline (128= String.newline() ), backspace (129= String.backspace() ),
+			left arrow (130), up arrow (131), right arrow (132), down arrow (133), home (134), end
+			(135), page up (136), page down (137), insert (138), delete (139), ESC (140), F1-F12
+			(141-152). */
+
+			let key = Keyboard.keyPressed();
+			
+			let moved = snake.move(0);
+			if (~moved) {
+				let exit = true;
+				return;
+			}
+
+			// q key to exit
+			if (key = 81) {
+				let exit = true;
+			}
+
+			// up arrow
+			if (key = 131) {
+				let direction = 1;
+			}
+
+			// down arrow
+			if (key = 133) {
+				let direction = 2;
+			}
+
+			// left arrow
+			if (key = 130) {
+				let direction = 3;
+			}
+
+			// right arrow
+			if (key = 132) {
+				let direction = 4;
+			}
+
+			// while key being pressed i.e. key != 0
+			while (~(key=0)) {
+				let key = Keyboard.keyPressed();
+				let moved = snake.move(direction);
+				
+				if (~moved) {
+					let exit = true;
+				}
+			}
+		}
+		return;
+	}
+
+	method void dispose() {
+		// have to dispose of the snake class as well
+		do snake.dispose();
+		
+		// de-allocates the given object (cast as an array) by making it available for future allocations.
+		do Memory.deAlloc(this);
+		return;
+	}
+
+}
