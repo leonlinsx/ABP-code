@@ -64,8 +64,29 @@ def fast_closest_pair(cluster_list):
     Output: tuple of the form (dist, idx1, idx2) where the centers of the clusters
     cluster_list[idx1] and cluster_list[idx2] have minimum distance dist.       
     """
-    
-    return ()
+    cluster_list = cluster_list[:]
+    cluster_list.sort(key = lambda cluster: cluster.horiz_center())
+    len_list = len(cluster_list)
+
+    if len_list <= 3:
+        (dist, idx1, idx2) = slow_closest_pair(cluster_list)
+    else:
+        half_len_list = len_list // 2
+        cluster_list_first_half = cluster_list[0:half_len_list]
+        cluster_list_sec_half = cluster_list[half_len_list:]
+        (dist_1, idx1_1, idx2_1) = fast_closest_pair(cluster_list_first_half)
+        (dist_2, idx1_2, idx2_2) = fast_closest_pair(cluster_list_sec_half)
+
+        if dist_1 < dist_2:
+            (dist, idx1, idx2) = (dist_1, idx1_1, idx2_1)
+        else:
+            (dist, idx1, idx2) = (dist_2, idx1_2 + half_len_list, idx2_2 + half_len_list)
+        mid_line = 0.5 * (cluster_list[half_len_list - 1].horiz_center() + cluster_list[half_len_list].horiz_center())
+        (dist_3, idx1_3, idx2_3) = closest_pair_strip(cluster_list, mid_line, dist)
+        if dist_3 < dist:
+            (dist, idx1, idx2) = (dist_3, idx1_3, idx2_3)
+
+    return (dist, idx1, idx2)
 
 
 def closest_pair_strip(cluster_list, horiz_center, half_width):
@@ -80,8 +101,28 @@ def closest_pair_strip(cluster_list, horiz_center, half_width):
     Output: tuple of the form (dist, idx1, idx2) where the centers of the clusters
     cluster_list[idx1] and cluster_list[idx2] lie in the strip and have minimum distance dist.       
     """
+    within_strip_indexes = []
+    
+    cluster_list = cluster_list[:]
 
-    return ()
+    # cluster_list.sort(key = lambda cluster: cluster.vert_center())
+    
+    for index, cluster in enumerate(cluster_list):
+        if abs(cluster.horiz_center() - horiz_center) < half_width:
+            within_strip_indexes.append(index)
+    
+    within_strip_indexes.sort(key=lambda idx: cluster_list[idx].vert_center())
+
+    indexes_len = len(within_strip_indexes)
+    (dist, idx1, idx2) = (float('inf'), -1, -1)
+    
+    for i in range(indexes_len - 1):
+        for j in range(i + 1, min((i + 3), indexes_len - 1) + 1):
+            (dist_ij, idx_i, idx_j) = pair_distance(cluster_list, within_strip_indexes[i], within_strip_indexes[j])
+            if dist_ij < dist:
+                (dist, idx1, idx2) = (dist_ij, idx_i, idx_j)
+
+    return (dist, idx1, idx2)
             
  
     
@@ -120,4 +161,9 @@ def kmeans_clustering(cluster_list, num_clusters, num_iterations):
 
 # clust = alg_cluster.Cluster(set([]), 0, 0, 1, 0)
 # print(slow_closest_pair([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0)]))
-# print(clust)
+# print("")
+# print(fast_closest_pair([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0)]))
+# print("")
+# print(closest_pair_strip([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0), alg_cluster.Cluster(set([]), 2, 0, 1, 0), alg_cluster.Cluster(set([]), 3, 0, 1, 0)], 1.5, 1.0))
+# print(closest_pair_strip([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 0, 1, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 1, 1, 0)], 0.5, 1.0))
+print(closest_pair_strip([alg_cluster.Cluster(set([]), 0.1, 0.42, 1, 0), alg_cluster.Cluster(set([]), 0.21, 0.51, 1, 0), alg_cluster.Cluster(set([]), 0.33, 0.39, 1, 0), alg_cluster.Cluster(set([]), 0.7, 0.24, 1, 0)], 0.27, 0.142127))
