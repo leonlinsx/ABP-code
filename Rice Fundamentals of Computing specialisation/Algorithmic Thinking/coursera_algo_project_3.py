@@ -64,8 +64,10 @@ def fast_closest_pair(cluster_list):
     Output: tuple of the form (dist, idx1, idx2) where the centers of the clusters
     cluster_list[idx1] and cluster_list[idx2] have minimum distance dist.       
     """
+    # work on a copy (python 2 test suite) and ensure sorted
     cluster_list = cluster_list[:]
     cluster_list.sort(key = lambda cluster: cluster.horiz_center())
+    
     len_list = len(cluster_list)
 
     if len_list <= 3:
@@ -111,6 +113,7 @@ def closest_pair_strip(cluster_list, horiz_center, half_width):
         if abs(cluster.horiz_center() - horiz_center) < half_width:
             within_strip_indexes.append(index)
     
+    # sort the new indexes list based on cluster list vert_center ascending order's index
     within_strip_indexes.sort(key=lambda idx: cluster_list[idx].vert_center())
 
     indexes_len = len(within_strip_indexes)
@@ -158,12 +161,3 @@ def kmeans_clustering(cluster_list, num_clusters, num_iterations):
     # position initial clusters at the location of clusters with largest populations
             
     return []
-
-# clust = alg_cluster.Cluster(set([]), 0, 0, 1, 0)
-# print(slow_closest_pair([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0)]))
-# print("")
-# print(fast_closest_pair([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0)]))
-# print("")
-# print(closest_pair_strip([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0), alg_cluster.Cluster(set([]), 2, 0, 1, 0), alg_cluster.Cluster(set([]), 3, 0, 1, 0)], 1.5, 1.0))
-# print(closest_pair_strip([alg_cluster.Cluster(set([]), 0, 0, 1, 0), alg_cluster.Cluster(set([]), 0, 1, 1, 0), alg_cluster.Cluster(set([]), 1, 0, 1, 0), alg_cluster.Cluster(set([]), 1, 1, 1, 0)], 0.5, 1.0))
-print(closest_pair_strip([alg_cluster.Cluster(set([]), 0.1, 0.42, 1, 0), alg_cluster.Cluster(set([]), 0.21, 0.51, 1, 0), alg_cluster.Cluster(set([]), 0.33, 0.39, 1, 0), alg_cluster.Cluster(set([]), 0.7, 0.24, 1, 0)], 0.27, 0.142127))
