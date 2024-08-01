@@ -41,12 +41,12 @@ def slow_closest_pair(cluster_list):
     """
     
     (dist, idx1, idx2) = (float('inf'), -1, -1)
-    for point_idx, point in enumerate(cluster_list):
-        for second_point_idx, second_point in enumerate(cluster_list):
-            if point == second_point:
+    for cluster_idx, cluster in enumerate(cluster_list):
+        for second_cluster_idx, second_cluster in enumerate(cluster_list):
+            if cluster == second_cluster:
                 pass
             else:
-                new_dist_tuple = pair_distance(cluster_list, point_idx, second_point_idx)
+                new_dist_tuple = pair_distance(cluster_list, cluster_idx, second_cluster_idx)
                 if new_dist_tuple[0] < dist:
                     (dist, idx1, idx2) = new_dist_tuple
 
@@ -73,18 +73,21 @@ def fast_closest_pair(cluster_list):
     if len_list <= 3:
         (dist, idx1, idx2) = slow_closest_pair(cluster_list)
     else:
+        # divide and conquer
         half_len_list = len_list // 2
         cluster_list_first_half = cluster_list[0:half_len_list]
         cluster_list_sec_half = cluster_list[half_len_list:]
         (dist_1, idx1_1, idx2_1) = fast_closest_pair(cluster_list_first_half)
         (dist_2, idx1_2, idx2_2) = fast_closest_pair(cluster_list_sec_half)
-
+        # merge
         if dist_1 < dist_2:
             (dist, idx1, idx2) = (dist_1, idx1_1, idx2_1)
         else:
             (dist, idx1, idx2) = (dist_2, idx1_2 + half_len_list, idx2_2 + half_len_list)
+        # check for mid line points
         mid_line = 0.5 * (cluster_list[half_len_list - 1].horiz_center() + cluster_list[half_len_list].horiz_center())
         (dist_3, idx1_3, idx2_3) = closest_pair_strip(cluster_list, mid_line, dist)
+        # merge
         if dist_3 < dist:
             (dist, idx1, idx2) = (dist_3, idx1_3, idx2_3)
 
@@ -141,8 +144,15 @@ def hierarchical_clustering(cluster_list, num_clusters):
     Input: List of clusters, integer number of clusters
     Output: List of clusters whose length is num_clusters
     """
-    
-    return []
+    while len(cluster_list) > num_clusters:
+        cluster_list.sort(key = lambda cluster: cluster.horiz_center())
+        (dist, cluster_1_idx, cluster_2_idx) = fast_closest_pair(cluster_list)
+        
+        # this mutates the cluster in place
+        cluster_list[cluster_1_idx].merge_clusters(cluster_list[cluster_2_idx])
+        del cluster_list[cluster_2_idx]
+
+    return cluster_list
 
 
 ######################################################################
@@ -157,7 +167,28 @@ def kmeans_clustering(cluster_list, num_clusters, num_iterations):
     Input: List of clusters, integers number of clusters and number of iterations
     Output: List of clusters whose length is num_clusters
     """
-
+    len_list = len(cluster_list)
+    cluster_list = cluster_list[:]
+    cluster_list.sort(key = lambda cluster: cluster.total_population(), reverse=True)
     # position initial clusters at the location of clusters with largest populations
-            
-    return []
+    k_centers = cluster_list[:num_clusters]
+
+    for _ in range(num_iterations):
+        # initialise k empty sets for the clustering
+        cluster_sets = [alg_cluster.Cluster(set([]), 0, 0, 0, 0) for _ in range(num_clusters)]
+        for idx in range(len_list):
+            # find the index of the closest cluster in cluster_sets, to the clusters in cluster_list
+            min_dist = float('inf')
+            cluster_set_idx = 0
+            for k_idx, cluster in enumerate(k_centers):
+                dist = cluster.distance(cluster_list[idx])
+                if dist < min_dist:
+                    min_dist = dist 
+                    cluster_set_idx = k_idx
+            # this mutates the cluster in place
+            cluster_sets[cluster_set_idx].merge_clusters(cluster_list[idx])
+        # update k_centers outside of the loop
+        for idx in range(num_clusters):
+            k_centers[idx] = cluster_sets[idx]
+
+    return cluster_sets

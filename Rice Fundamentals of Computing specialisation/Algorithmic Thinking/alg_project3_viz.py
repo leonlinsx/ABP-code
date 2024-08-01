@@ -19,12 +19,11 @@ import alg_cluster
 if DESKTOP:
     import coursera_algo_project_3      # desktop project solution
     import alg_clusters_matplotlib
-else:
+# else:
     #import userXX_XXXXXXXX as alg_project3_solution   # CodeSkulptor project solution
     # import alg_clusters_simplegui
     # import codeskulptor
     # codeskulptor.set_timeout(30)
-    pass
 
 
 ###################################################
@@ -114,9 +113,8 @@ def run_example():
     if DESKTOP:
         alg_clusters_matplotlib.plot_clusters(data_table, cluster_list, False)
         #alg_clusters_matplotlib.plot_clusters(data_table, cluster_list, True)  #add cluster centers
-    else:
+    # else:
         # alg_clusters_simplegui.PlotClusters(data_table, cluster_list)   # use toggle in GUI to add cluster centers
-        pass 
 
 run_example()
 
