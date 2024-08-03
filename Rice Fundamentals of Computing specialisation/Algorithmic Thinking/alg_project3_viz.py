@@ -99,14 +99,16 @@ def run_example():
     for line in data_table:
         singleton_list.append(alg_cluster.Cluster(set([line[0]]), line[1], line[2], line[3], line[4]))
         
-    cluster_list = sequential_clustering(singleton_list, 15)	
-    print("Displaying", len(cluster_list), "sequential clusters")
+    # cluster_list = sequential_clustering(singleton_list, 15)	
+    # print("Displaying", len(cluster_list), "sequential clusters")
 
-    #cluster_list = coursera_algo_project_3.hierarchical_clustering(singleton_list, 9)
-    #print "Displaying", len(cluster_list), "hierarchical clusters"
+    # question 2 
+    # cluster_list = coursera_algo_project_3.hierarchical_clustering(singleton_list, 15)
+    # print("Displaying", len(cluster_list), "hierarchical clusters")
 
-    #cluster_list = coursera_algo_project_3.kmeans_clustering(singleton_list, 9, 5)	
-    #print "Displaying", len(cluster_list), "k-means clusters"
+    # question 3 
+    cluster_list = coursera_algo_project_3.kmeans_clustering(singleton_list, 15, 5)	
+    print("Displaying", len(cluster_list), "k-means clusters")
 
             
     # draw the clusters using matplotlib or simplegui
@@ -116,8 +118,47 @@ def run_example():
     # else:
         # alg_clusters_simplegui.PlotClusters(data_table, cluster_list)   # use toggle in GUI to add cluster centers
 
-run_example()
+def run_example_2():
+    """
+    Load a data table, compute a list of clusters and 
+    plot a list of clusters
 
+    Set DESKTOP = True/False to use either matplotlib or simplegui
+    """
+    data_table = load_data_table(DATA_111_URL)
+    
+    singleton_list = []
+    for line in data_table:
+        singleton_list.append(alg_cluster.Cluster(set([line[0]]), line[1], line[2], line[3], line[4]))
+        
+    # cluster_list = sequential_clustering(singleton_list, 15)	
+    # print("Displaying", len(cluster_list), "sequential clusters")
+
+    # question 5 
+    cluster_list = coursera_algo_project_3.hierarchical_clustering(singleton_list, 9)
+    distortion = coursera_algo_project_3.compute_distortion(cluster_list, data_table)
+    print("Displaying", len(cluster_list), "hierarchical clusters")
+    print(f"Distortion is {distortion}")
+
+    # question 6 
+    # cluster_list = coursera_algo_project_3.kmeans_clustering(singleton_list, 9, 5)	
+    # distortion = coursera_algo_project_3.compute_distortion(cluster_list, data_table)
+    # print("Displaying", len(cluster_list), "k-means clusters")
+    # print(f"Distortion is {distortion}")
+
+            
+    # draw the clusters using matplotlib or simplegui
+    if DESKTOP:
+        alg_clusters_matplotlib.plot_clusters(data_table, cluster_list, False)
+        #alg_clusters_matplotlib.plot_clusters(data_table, cluster_list, True)  #add cluster centers
+    # else:
+        # alg_clusters_simplegui.PlotClusters(data_table, cluster_list)   # use toggle in GUI to add cluster centers
+
+# question 3 and 4
+# run_example()
+
+# question 5 and 6
+run_example_2()
 
 
 

@@ -13,6 +13,9 @@ where cluster_list is a 2D list of clusters in the plane
 
 import math
 import alg_cluster
+import random
+import time 
+import matplotlib.pyplot as plt  
 # import alg_clusters_matplotlib
 
 ######################################################
@@ -164,6 +167,15 @@ def kmeans_clustering(cluster_list, num_clusters, num_iterations):
     Compute the k-means clustering of a set of clusters
     Note: the function may not mutate cluster_list
     
+    Initialize old cluster using large population counties 
+    For number of iterations 
+        Initialize the new clusters to be empty 
+        For each county 
+            Find the old cluster center that is closest 
+            Add the county to the corresponding new cluster 
+        Set old clusters equal to new clusters 
+    Return the new clusters
+
     Input: List of clusters, integers number of clusters and number of iterations
     Output: List of clusters whose length is num_clusters
     """
@@ -192,3 +204,56 @@ def kmeans_clustering(cluster_list, num_clusters, num_iterations):
             k_centers[idx] = cluster_sets[idx]
 
     return cluster_sets
+
+def gen_random_clusters(num_clusters):
+    """
+    creates a list of clusters where each cluster in this list corresponds to 
+    one randomly generated point in the square with corners (±1,±1)
+    """
+    cluster_list = []
+
+    for _ in range(num_clusters):
+        (x_coord, y_coord) = (random.random(), random.random())
+        cluster_list.append(alg_cluster.Cluster(set([]), x_coord, y_coord, 0, 0))
+
+    return cluster_list
+
+def plot_times(n_values=range(2, 201)):
+    slow_times = []
+    fast_times = []
+
+    for n in n_values:
+        cluster_list = gen_random_clusters(n)
+
+        start_time = time.time()
+        slow_closest_pair(cluster_list)
+        slow_times.append(time.time() - start_time)
+
+        start_time = time.time()
+        fast_closest_pair(cluster_list)
+        fast_times.append(time.time() - start_time)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(n_values, fast_times, label='Slow closest pair', marker='o')
+    plt.plot(n_values, slow_times, label='Fast closest pair', marker='s')
+    plt.xlabel('Number of clusters (n)')
+    plt.ylabel('Running Time (seconds)')
+    plt.title('Running Time of closest pair algos\n(Desktop Python)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def compute_distortion(cluster_list, data_table):
+    """
+    takes a list of clusters and uses cluster_error to compute its distortion
+    data_table is the original table of cancer data used in creating the cluster
+    """
+    total_error = 0
+    for cluster in cluster_list:
+        total_error += cluster.cluster_error(data_table)
+
+    return total_error
+
+# question 1
+# plot_times()
+
