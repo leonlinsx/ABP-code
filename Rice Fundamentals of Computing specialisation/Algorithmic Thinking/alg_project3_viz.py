@@ -14,6 +14,7 @@ import math
 import random
 import urllib.request
 import alg_cluster
+import matplotlib.pyplot as plt  
 
 # conditional imports
 if DESKTOP:
@@ -154,11 +155,63 @@ def run_example_2():
     # else:
         # alg_clusters_simplegui.PlotClusters(data_table, cluster_list)   # use toggle in GUI to add cluster centers
 
+def run_example_3(data_table_url):
+    """
+    Load a data table, compute a list of clusters and 
+    plot a list of clusters
+
+    Set DESKTOP = True/False to use either matplotlib or simplegui
+    """
+    data_table = load_data_table(data_table_url)
+    
+    singleton_list = []
+    for line in data_table:
+        singleton_list.append(alg_cluster.Cluster(set([line[0]]), line[1], line[2], line[3], line[4]))
+
+    # question 10        
+    hierarchical_distortions = []
+    kmeans_distortions = []
+
+    # calc kmeans first since hierarchical mutates the list and i'm lazy to change code
+    for num_cluster in range(20, 5, -1): 
+        kmeans_cluster_list = coursera_algo_project_3.kmeans_clustering(singleton_list, num_cluster, 5)	
+        kmeans_distortion = coursera_algo_project_3.compute_distortion(kmeans_cluster_list, data_table)
+        kmeans_distortions.append(kmeans_distortion)
+
+    # To compute the distortion for all 15 output clusterings produced by hierarchical_clustering
+    # you should remember that you can use the hierarchical cluster of size 20 
+    # to compute the hierarchical clustering of size 19 and so on
+    cluster_list = coursera_algo_project_3.hierarchical_clustering(singleton_list, 20)
+
+    for num_cluster in range(20, 5, -1): 
+        cluster_list = coursera_algo_project_3.hierarchical_clustering(cluster_list, num_cluster)
+        distortion = coursera_algo_project_3.compute_distortion(cluster_list, data_table)
+        hierarchical_distortions.append(distortion)
+
+    # print(hierarchical_distortions)
+    # print(kmeans_distortions)
+
+    # plot distortion vs number of clusters comparison
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(20, 5, -1), hierarchical_distortions, label='hierarchical', marker='o')
+    plt.plot(range(20, 5, -1), kmeans_distortions, label='kmeans', marker='s')
+    plt.xlabel('Number of clusters (n)')
+    plt.ylabel('Distortion')
+    plt.title('Distortion of closest pair algos\n(Desktop Python)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 # question 3 and 4
 # run_example()
 
 # question 5 and 6
-run_example_2()
+# run_example_2()
+
+# question 10
+run_example_3(DATA_111_URL)
+run_example_3(DATA_290_URL)
+run_example_3(DATA_896_URL)
 
 
 
