@@ -55,6 +55,7 @@ def compute_alignment_matrix(seq_x, seq_y, scoring_matrix, global_flag):
     alignment_matrix[row][col].
     """
     alignment_matrix = [[0]]
+    # add one for the - character
     num_rows = len(seq_x) + 1
     num_cols = len(seq_y) + 1
 
@@ -93,6 +94,7 @@ def compute_global_alignment(seq_x, seq_y, scoring_matrix, alignment_matrix):
     Note that align_x and align_y should have the same length 
     and may include the padding character '-'.
     """
+    # do not need to add 1 since walking through alignment matrix
     row_idx, col_idx = len(seq_x), len(seq_y)
     align_x, align_y = "", ""
 
@@ -152,6 +154,7 @@ def compute_local_alignment(seq_x, seq_y, scoring_matrix, alignment_matrix):
     row_idx, col_idx, score = 0, 0, 0
     align_x, align_y = "", ""
     
+    # find the max score in alignment matrix and start from there
     for align_row_idx in range(len(seq_x) + 1):
         for align_col_idx in range(len(seq_y) + 1):
             if score <= alignment_matrix[align_row_idx][align_col_idx]:
